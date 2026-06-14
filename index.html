@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatBank - Mode Sombre & Missions</title>
+    <style>
+        :root {
+            --primary-color: #ff914d;
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-color: #e0e0e0;
+            --border-color: #333333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+        }
+
+        header {
+            background-color: #000000;
+            color: var(--primary-color);
+            padding: 20px;
+            text-align: center;
+            font-size: 26px;
+            font-weight: bold;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        .full-width {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: var(--primary-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .balance {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2ecc71;
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.2);
+        }
+
+        input, button {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        input {
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: #ffffff;
+        }
+
+        input:focus {
+            outline: 1px solid var(--primary-color);
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: #000000;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .actions-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-small {
+            width: auto;
+            padding: 8px 12px;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .list-style {
+            list-style-type: none;
+            padding: 0;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .list-style li {
+            background: #252525;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        #history-container li {
+            border-left: 4px solid #3498db;
+            font-family: monospace;
+        }
+
+        .empty-text {
+            color: #777;
+            text-align: center;
+            font-style: italic;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        🐾 CatBank : Missions & Magasin Perso 🐾
+    </header>
+
+    <div class="container">
+        <div class="card full-width">
+            <h2>Votre Compte Épargne Chat</h2>
+            <div class="balance"><span id="balance-amount">100</span> 🐾 Cat Points</div>
+            
+            <div style="display: flex; gap: 10px;">
+                <input type="number" id="transaction-amount" placeholder="Montant manuel" min="1">
+                <button onclick="addPoints()">Déposer 🐾</button>
+                <button onclick="removePoints()" style="background-color: #e74c3c; color: white;">Retirer 🐾</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📋 Missions disponibles</h2>
+                <div id="tasks-container">
+                    </div>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Créer une Mission</h2>
+                <p style="color: #aaa; font-size: 14px;">Ajoute des corvées ou objectifs pour gagner des points !</p>
+                <input type="text" id="new-task-name" placeholder="Nom de la mission (ex: Ranger ma chambre)">
+                <input type="number" id="new-task-reward" placeholder="Récompense en Cat Points" min="1">
+                <button onclick="addNewTask()" style="background-color: #3498db; color: white;">Ajouter la mission</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🛒 Le Magasin (Créé par vous)</h2>
+                <div id="shop-container">
+                    </div>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Ajouter un Article</h2>
+                <p style="color: #aaa; font-size: 14px;">Crée les récompenses que tu pourras acheter avec tes points !</p>
+                <input type="text" id="new-item-name" placeholder="Nom de l'article (ex: 30 min de console)">
+                <input type="number" id="new-item-price" placeholder="Prix en Cat Points" min="1">
+                <button onclick="addNewItem()" style="background-color: #2ecc71; color: black;">Ajouter au catalogue</button>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🎒 Vos Achats / Inventaire</h2>
+                <ul id="inventory-container" class="list-style"></ul>
+            </div>
+
+            <div class="card">
+                <h2>📜 Historique des Actions</h2>
+                <ul id="history-container" class="list-style"></ul>
+                <button onclick="clearHistory()" style="background-color: #333; color: #aaa; font-size: 12px; padding: 5px; margin-top: 10px;">Effacer l'historique</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialisation des données (100% vides au départ si aucune sauvegarde)
+        let balance = parseInt(localStorage.getItem('catBalance')) || 100;
+        let tasks = JSON.parse(localStorage.getItem('catTasks')) || [];
+        let shopItems = JSON.parse(localStorage.getItem('catShopItems')) || [];
+        let inventory = JSON.parse(localStorage.getItem('catInventory')) || [];
+        let historyLogs = JSON.parse(localStorage.getItem('catHistory')) || [
+            "Bienvenue sur CatBank ! Compte créé."
+        ];
+
+        // Premier affichage général
+        updateUI();
+
+        function updateUI() {
+            // 1. Mise à jour de la Banque
+            document.getElementById('balance-amount').innerText = balance;
+            localStorage.setItem('catBalance', balance);
+
+            // 2. Mise à jour des Missions
+            const tasksContainer = document.getElementById('tasks-container');
+            tasksContainer.innerHTML = '';
+            if (tasks.length === 0) {
+                tasksContainer.innerHTML = '<div class="empty-text">Aucune mission en cours. Créez-en une à droite !</div>';
+            } else {
+                tasks.forEach(task => {
+                    tasksContainer.innerHTML += `
+                        <div class="list-item">
+                            <span><strong>${task.name}</strong> - <span style="color:#2ecc71">+${task.reward} 🐾</span></span>
+                            <div class="actions-group">
+                                <button class="btn-small" onclick="completeTask(${task.id})" style="background-color: #2ecc71; color: black;">Valider ✅</button>
+                                <button class="btn-small" onclick="deleteTask(${task.id})" style="background-color: #e74c3c; color: white;">❌</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            localStorage.setItem('catTasks', JSON.stringify(tasks));
+
+            // 3. Mise à jour du Magasin
+            const shopContainer = document.getElementById('shop-container');
+            shopContainer.innerHTML = '';
+            if (shopItems.length === 0) {
+                shopContainer.innerHTML = '<div class="empty-text">Le magasin est vide. Créez des articles à droite !</div>';
+            } else {
+                shopItems.forEach(item => {
+                    shopContainer.innerHTML += `
+                        <div class="list-item">
+                            <span><strong>${item.name}</strong> - <span style="color:var(--primary-color)">${item.price} 🐾</span></span>
+                            <div class="actions-group">
+                                <button class="btn-small" onclick="buyItem(${item.id})" style="background-color: var(--primary-color);">Acheter</button>
+                                <button class="btn-small" onclick="deleteItem(${item.id})" style="background-color: #e74c3c; color: white;">❌</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            localStorage.setItem('catShopItems', JSON.stringify(shopItems));
+
+            // 4. Mise à jour de l'Inventaire
+            const inventoryContainer = document.getElementById('inventory-container');
+            inventoryContainer.innerHTML = '';
+            if (inventory.length === 0) {
+                inventoryContainer.innerHTML = '<li class="empty-text">Aucun objet possédé.</li>';
+            } else {
+                inventory.forEach((item, index) => {
+                    inventoryContainer.innerHTML += `
+                        <li>
+                            <span>🐱 ${item}</span> 
+                            <div class="actions-group">
+                                <span style="color: #2ecc71; font-weight: bold;">Possédé</span>
+                                <button class="btn-small" onclick="deleteInventoryItem(${index})" style="background-color: #e74c3c; color: white;">❌</button>
+                            </div>
+                        </li>
+                    `;
+                });
+            }
+            localStorage.setItem('catInventory', JSON.stringify(inventory));
+
+            // 5. Mise à jour de l'Historique
+            const historyContainer = document.getElementById('history-container');
+            historyContainer.innerHTML = '';
+            [...historyLogs].reverse().forEach(log => {
+                historyContainer.innerHTML += `<li>${log}</li>`;
+            });
+            localStorage.setItem('catHistory', JSON.stringify(historyLogs));
+        }
+
+        // Ajouter une action dans l'historique
+        function logAction(message) {
+            const now = new Date();
+            const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            historyLogs.push(`[${time}] ${message}`);
+            updateUI();
+        }
+
+        // --- FONCTIONS LOGIQUE ---
+
+        // Banque : Dépôt manuel
+        function addPoints() {
+            const amount = parseInt(document.getElementById('transaction-amount').value);
+            if (amount > 0) {
+                balance += amount;
+                logAction(`Dépôt manuel de +${amount} 🐾.`);
+                document.getElementById('transaction-amount').value = '';
+            }
+        }
+
+        // Banque : Retrait manuel
+        function removePoints() {
+            const amount = parseInt(document.getElementById('transaction-amount').value);
+            if (amount > 0 && balance >= amount) {
+                balance -= amount;
+                logAction(`Retrait manuel de -${amount} 🐾.`);
+                document.getElementById('transaction-amount').value = '';
+            } else {
+                alert("Solde insuffisant ou montant invalide !");
+            }
+        }
+
+        // Tâches : Créer une mission
+        function addNewTask() {
+            const name = document.getElementById('new-task-name').value.trim();
+            const reward = parseInt(document.getElementById('new-task-reward').value);
+
+            if (name && reward > 0) {
+                const newTask = {
+                    id: Date.now(),
+                    name: name,
+                    reward: reward
+                };
+                tasks.push(newTask);
+                logAction(`Mission créée : "${name}" (+${reward} 🐾).`);
+                
+                document.getElementById('new-task-name').value = '';
+                document.getElementById('new-task-reward').value = '';
+            } else {
+                alert("Veuillez donner un nom de mission et une récompense valide.");
+            }
+        }
+
+        // Tâches : Valider et gagner les points
+        function completeTask(id) {
+            const index = tasks.findIndex(t => t.id === id);
+            if (index !== -1) {
+                const task = tasks[index];
+                balance += task.reward; // On gagne les points !
+                logAction(`Mission accomplie : "${task.name}" (+${task.reward} 🐾).`);
+                tasks.splice(index, 1); // Supprime la mission car elle est faite
+                updateUI();
+            }
+        }
+
+        // Tâches : Supprimer/Annuler une mission sans gagner de points
+        function deleteTask(id) {
+            const index = tasks.findIndex(t => t.id === id);
+            if (index !== -1) {
+                const removedName = tasks[index].name;
+                tasks.splice(index, 1);
+                logAction(`Mission annulée : "${removedName}".`);
+                updateUI();
+            }
+        }
+
+        // Magasin : Créer un article
+        function addNewItem() {
+            const name = document.getElementById('new-item-name').value.trim();
+            const price = parseInt(document.getElementById('new-item-price').value);
+
+            if (name && price > 0) {
+                const newItem = {
+                    id: Date.now(),
+                    name: name,
+                    price: price
+                };
+                shopItems.push(newItem);
+                logAction(`Article créé au magasin : "${name}" pour ${price} 🐾.`);
+                
+                document.getElementById('new-item-name').value = '';
+                document.getElementById('new-item-price').value = '';
+            } else {
+                alert("Veuillez donner un nom et un prix valide.");
+            }
+        }
+
+        // Magasin : Supprimer un article
+        function deleteItem(id) {
+            const index = shopItems.findIndex(i => i.id === id);
+            if (index !== -1) {
+                const removedName = shopItems[index].name;
+                shopItems.splice(index, 1);
+                logAction(`Article supprimé du magasin : "${removedName}".`);
+                updateUI();
+            }
+        }
+
+        // Magasin : Acheter un article
+        function buyItem(id) {
+            const item = shopItems.find(i => i.id === id);
+            if (item) {
+                if (balance >= item.price) {
+                    balance -= item.price;
+                    inventory.push(item.name);
+                    logAction(`Achat réussi : "${item.name}" (-${item.price} 🐾).`);
+                } else {
+                    alert("Miaou... Tu n'as pas assez de Cat Points !");
+                }
+            }
+        }
+
+        // Inventaire : Jeter un objet possédé
+        function deleteInventoryItem(index) {
+            const removedName = inventory[index];
+            inventory.splice(index, 1);
+            logAction(`Objet jeté de l'inventaire : "${removedName}".`);
+            updateUI();
+        }
+
+        // Supprimer l'historique complet
+        function clearHistory() {
+            historyLogs = ["[Système] Historique réinitialisé."];
+            updateUI();
+        }
+    </script>
+</body>
+</html>
