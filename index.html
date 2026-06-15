@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CatBank - Mode Sombre & Missions</title>
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/cat.png">
-    
     <style>
         :root {
             --primary-color: #ff914d;
@@ -125,6 +124,18 @@
             border-bottom: none;
         }
 
+        .item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .item-note {
+            font-size: 13px;
+            color: #aaa;
+            font-style: italic;
+        }
+
         .actions-group {
             display: flex;
             align-items: center;
@@ -141,7 +152,7 @@
         .list-style {
             list-style-type: none;
             padding: 0;
-            max-height: 200px;
+            max-height: 240px;
             overflow-y: auto;
         }
 
@@ -190,15 +201,15 @@
 
         <div class="grid">
             <div class="card">
-                <h2>📋 Missions disponibles</h2>
-                <div id="tasks-container">
-                    </div>
+                <h2>📋 Missions permanentes</h2>
+                <div id="tasks-container"></div>
             </div>
 
             <div class="card">
                 <h2>⚙️ Créer une Mission</h2>
-                <p style="color: #aaa; font-size: 14px;">Ajoute des corvées ou objectifs pour gagner des points !</p>
+                <p style="color: #aaa; font-size: 14px;">Ajoute des quêtes répétables et décris ce qu'il faut faire !</p>
                 <input type="text" id="new-task-name" placeholder="Nom de la mission (ex: Ranger ma chambre)">
+                <input type="text" id="new-task-note" placeholder="Note / Consigne (ex: Faire le lit et passer l'aspirateur)">
                 <input type="number" id="new-task-reward" placeholder="Récompense en Cat Points" min="1">
                 <button onclick="addNewTask()" style="background-color: #3498db; color: white;">Ajouter la mission</button>
             </div>
@@ -207,14 +218,14 @@
         <div class="grid">
             <div class="card">
                 <h2>🛒 Le Magasin (Créé par vous)</h2>
-                <div id="shop-container">
-                    </div>
+                <div id="shop-container"></div>
             </div>
 
             <div class="card">
                 <h2>⚙️ Ajouter un Article</h2>
-                <p style="color: #aaa; font-size: 14px;">Crée les récompenses que tu pourras acheter avec tes points !</p>
+                <p style="color: #aaa; font-size: 14px;">Crée les récompenses que tu pourras t'offrir !</p>
                 <input type="text" id="new-item-name" placeholder="Nom de l'article (ex: 30 min de console)">
+                <input type="text" id="new-item-note" placeholder="Note / Règle (ex: Uniquement le week-end)">
                 <input type="number" id="new-item-price" placeholder="Prix en Cat Points" min="1">
                 <button onclick="addNewItem()" style="background-color: #2ecc71; color: black;">Ajouter au catalogue</button>
             </div>
@@ -235,7 +246,7 @@
     </div>
 
     <script>
-        // Initialisation des données (100% vides au départ si aucune sauvegarde)
+        // Récupération des données locales
         let balance = parseInt(localStorage.getItem('catBalance')) || 100;
         let tasks = JSON.parse(localStorage.getItem('catTasks')) || [];
         let shopItems = JSON.parse(localStorage.getItem('catShopItems')) || [];
@@ -244,24 +255,26 @@
             "Bienvenue sur CatBank ! Compte créé."
         ];
 
-        // Premier affichage général
         updateUI();
 
         function updateUI() {
-            // 1. Mise à jour de la Banque
+            // 1. Solde
             document.getElementById('balance-amount').innerText = balance;
             localStorage.setItem('catBalance', balance);
 
-            // 2. Mise à jour des Missions
+            // 2. Missions
             const tasksContainer = document.getElementById('tasks-container');
             tasksContainer.innerHTML = '';
             if (tasks.length === 0) {
-                tasksContainer.innerHTML = '<div class="empty-text">Aucune mission en cours. Créez-en une à droite !</div>';
+                tasksContainer.innerHTML = '<div class="empty-text">Aucune mission enregistrée. Créez-en une à droite !</div>';
             } else {
                 tasks.forEach(task => {
                     tasksContainer.innerHTML += `
                         <div class="list-item">
-                            <span><strong>${task.name}</strong> - <span style="color:#2ecc71">+${task.reward} 🐾</span></span>
+                            <div class="item-info">
+                                <span><strong>${task.name}</strong> - <span style="color:#2ecc71">+${task.reward} 🐾</span></span>
+                                ${task.note ? `<span class="item-note">📝 ${task.note}</span>` : ''}
+                            </div>
                             <div class="actions-group">
                                 <button class="btn-small" onclick="completeTask(${task.id})" style="background-color: #2ecc71; color: black;">Valider ✅</button>
                                 <button class="btn-small" onclick="deleteTask(${task.id})" style="background-color: #e74c3c; color: white;">❌</button>
@@ -272,7 +285,7 @@
             }
             localStorage.setItem('catTasks', JSON.stringify(tasks));
 
-            // 3. Mise à jour du Magasin
+            // 3. Magasin
             const shopContainer = document.getElementById('shop-container');
             shopContainer.innerHTML = '';
             if (shopItems.length === 0) {
@@ -281,7 +294,10 @@
                 shopItems.forEach(item => {
                     shopContainer.innerHTML += `
                         <div class="list-item">
-                            <span><strong>${item.name}</strong> - <span style="color:var(--primary-color)">${item.price} 🐾</span></span>
+                            <div class="item-info">
+                                <span><strong>${item.name}</strong> - <span style="color:var(--primary-color)">${item.price} 🐾</span></span>
+                                ${item.note ? `<span class="item-note">📝 ${item.note}</span>` : ''}
+                            </div>
                             <div class="actions-group">
                                 <button class="btn-small" onclick="buyItem(${item.id})" style="background-color: var(--primary-color);">Acheter</button>
                                 <button class="btn-small" onclick="deleteItem(${item.id})" style="background-color: #e74c3c; color: white;">❌</button>
@@ -292,7 +308,7 @@
             }
             localStorage.setItem('catShopItems', JSON.stringify(shopItems));
 
-            // 4. Mise à jour de l'Inventaire
+            // 4. Inventaire
             const inventoryContainer = document.getElementById('inventory-container');
             inventoryContainer.innerHTML = '';
             if (inventory.length === 0) {
@@ -301,7 +317,10 @@
                 inventory.forEach((item, index) => {
                     inventoryContainer.innerHTML += `
                         <li>
-                            <span>🐱 ${item}</span> 
+                            <div class="item-info">
+                                <span>🐱 <strong>${item.name}</strong></span>
+                                ${item.note ? `<span class="item-note">📝 ${item.note}</span>` : ''}
+                            </div>
                             <div class="actions-group">
                                 <span style="color: #2ecc71; font-weight: bold;">Possédé</span>
                                 <button class="btn-small" onclick="deleteInventoryItem(${index})" style="background-color: #e74c3c; color: white;">❌</button>
@@ -312,7 +331,7 @@
             }
             localStorage.setItem('catInventory', JSON.stringify(inventory));
 
-            // 5. Mise à jour de l'Historique
+            // 5. Historique
             const historyContainer = document.getElementById('history-container');
             historyContainer.innerHTML = '';
             [...historyLogs].reverse().forEach(log => {
@@ -321,7 +340,6 @@
             localStorage.setItem('catHistory', JSON.stringify(historyLogs));
         }
 
-        // Ajouter une action dans l'historique
         function logAction(message) {
             const now = new Date();
             const time = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -329,9 +347,7 @@
             updateUI();
         }
 
-        // --- FONCTIONS LOGIQUE ---
-
-        // Banque : Dépôt manuel
+        // --- OPERATIONS BANQUE ---
         function addPoints() {
             const amount = parseInt(document.getElementById('transaction-amount').value);
             if (amount > 0) {
@@ -341,7 +357,6 @@
             }
         }
 
-        // Banque : Retrait manuel
         function removePoints() {
             const amount = parseInt(document.getElementById('transaction-amount').value);
             if (amount > 0 && balance >= amount) {
@@ -353,72 +368,59 @@
             }
         }
 
-        // Tâches : Créer une mission
+        // --- OPERATIONS TASKS ---
         function addNewTask() {
             const name = document.getElementById('new-task-name').value.trim();
+            const note = document.getElementById('new-task-note').value.trim();
             const reward = parseInt(document.getElementById('new-task-reward').value);
 
             if (name && reward > 0) {
-                const newTask = {
-                    id: Date.now(),
-                    name: name,
-                    reward: reward
-                };
-                tasks.push(newTask);
+                tasks.push({ id: Date.now(), name: name, note: note, reward: reward });
                 logAction(`Mission créée : "${name}" (+${reward} 🐾).`);
-                
                 document.getElementById('new-task-name').value = '';
+                document.getElementById('new-task-note').value = '';
                 document.getElementById('new-task-reward').value = '';
             } else {
-                alert("Veuillez donner un nom de mission et une récompense valide.");
+                alert("Veuillez donner un nom et une récompense valide.");
             }
         }
 
-        // Tâches : Valider et gagner les points
         function completeTask(id) {
-            const index = tasks.findIndex(t => t.id === id);
-            if (index !== -1) {
-                const task = tasks[index];
-                balance += task.reward; // On gagne les points !
+            const task = tasks.find(t => t.id === id);
+            if (task) {
+                balance += task.reward;
                 logAction(`Mission accomplie : "${task.name}" (+${task.reward} 🐾).`);
-                tasks.splice(index, 1); // Supprime la mission car elle est faite
                 updateUI();
             }
         }
 
-        // Tâches : Supprimer/Annuler une mission sans gagner de points
         function deleteTask(id) {
             const index = tasks.findIndex(t => t.id === id);
             if (index !== -1) {
                 const removedName = tasks[index].name;
                 tasks.splice(index, 1);
-                logAction(`Mission annulée : "${removedName}".`);
+                logAction(`Mission supprimée : "${removedName}".`);
                 updateUI();
             }
         }
 
-        // Magasin : Créer un article
+        // --- OPERATIONS MAGASIN ---
         function addNewItem() {
             const name = document.getElementById('new-item-name').value.trim();
+            const note = document.getElementById('new-item-note').value.trim();
             const price = parseInt(document.getElementById('new-item-price').value);
 
             if (name && price > 0) {
-                const newItem = {
-                    id: Date.now(),
-                    name: name,
-                    price: price
-                };
-                shopItems.push(newItem);
-                logAction(`Article créé au magasin : "${name}" pour ${price} 🐾.`);
-                
+                shopItems.push({ id: Date.now(), name: name, note: note, price: price });
+                logAction(`Article créé : "${name}" pour ${price} 🐾.`);
                 document.getElementById('new-item-name').value = '';
+                document.getElementById('new-item-note').value = '';
                 document.getElementById('new-item-price').value = '';
             } else {
                 alert("Veuillez donner un nom et un prix valide.");
             }
         }
 
-        // Magasin : Supprimer un article
         function deleteItem(id) {
             const index = shopItems.findIndex(i => i.id === id);
             if (index !== -1) {
@@ -429,13 +431,12 @@
             }
         }
 
-        // Magasin : Acheter un article
         function buyItem(id) {
             const item = shopItems.find(i => i.id === id);
             if (item) {
                 if (balance >= item.price) {
                     balance -= item.price;
-                    inventory.push(item.name);
+                    inventory.push({ name: item.name, note: item.note });
                     logAction(`Achat réussi : "${item.name}" (-${item.price} 🐾).`);
                 } else {
                     alert("Miaou... Tu n'as pas assez de Cat Points !");
@@ -443,15 +444,13 @@
             }
         }
 
-        // Inventaire : Jeter un objet possédé
         function deleteInventoryItem(index) {
-            const removedName = inventory[index];
+            const removedName = inventory[index].name;
             inventory.splice(index, 1);
             logAction(`Objet jeté de l'inventaire : "${removedName}".`);
             updateUI();
         }
 
-        // Supprimer l'historique complet
         function clearHistory() {
             historyLogs = ["[Système] Historique réinitialisé."];
             updateUI();
